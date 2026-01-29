@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "shebe": {
+      "command": "/usr/local/bin/shebe-mcp",
+      "args": [],
+      "env": {
+        "RUST_LOG": "info"
+      },
+      "description": "Shebe RAG service for code search using BM25"
+    }
+  }
+}

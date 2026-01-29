@@ -1,0 +1,10 @@
+id = "shebe"
+name = "Shebe Code Search"
+description = "BM25 full-text code search for AI agents"
+version = "0.5.7"
+schema_version = 1
+authors = ["RHOBIMD HEALTH"]
+repository = "https://github.com/rhobimd-oss/shebe-releases"
+
+[context_servers.shebe]
+name = "Shebe Code Search"
