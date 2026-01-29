@@ -15,6 +15,7 @@ tmp.*
 db-data
 pgadmin-data
 sample-data
+dev-docs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

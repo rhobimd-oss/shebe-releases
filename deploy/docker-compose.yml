@@ -1,0 +1,21 @@
+volumes:
+  cargo-registry:
+    driver: local
+  cargo-git:
+    driver: local
+  cargo-target:
+    driver: local
+
+services:
+  zed-ext-dev:
+    image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-alpine:20260121-b1.88-alpine3.22
+    container_name: zed-ext-dev
+    working_dir: /workspace
+    volumes:
+      - ../extensions/zed:/workspace:rw
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - cargo-target:/workspace/target
+    stdin_open: true
+    tty: true
+    command: bash

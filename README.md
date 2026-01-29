@@ -15,7 +15,7 @@ multiple distribution channels. The source code lives in the main
 | Channel | Status | Install Command |
 |---------|--------|-----------------|
 | Homebrew | Planned | `brew tap rhobimd-oss/shebe-releases && brew install shebe` |
-| Zed Extension | Planned | Install from Zed Extensions marketplace |
+| Zed Extension | Available | Install from Zed Extensions marketplace |
 | VS Code Extension | Planned | Install from VS Code marketplace |
 
 ### Homebrew
