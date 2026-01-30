@@ -1,6 +1,7 @@
 id = "shebe"
 name = "Shebe Code Search"
 description = "BM25 full-text code search for AI agents"
+# Keep in sync with extensions/zed/Cargo.toml version
 version = "0.5.7"
 schema_version = 1
 authors = ["RHOBIMD HEALTH"]

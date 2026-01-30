@@ -6,9 +6,6 @@ variables:
   CARGO_HOME: $CI_PROJECT_DIR/.cargo
   CARGO_INCREMENTAL: "0"
   ZED_EXT_DIR: extensions/zed
-  TEST_CMD: >-
-    cargo test --test github_release
-    -- --ignored --test-threads=1
 
 ## RULES ======================================================================
 
@@ -30,27 +27,15 @@ variables:
         - extensions/zed/tests/**/*
 
 ## JOBS ========================================================================
-
-dummy:job:
-  stage: prep
-  image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-alpine:20260123-b1.88-alpine3.22
-  timeout: 60s
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - time
-  before_script: []
-  after_script: []
-  cache: {}
-  artifacts:
-    reports: {}
-
-test:musl:
+test:
   stage: test
-  image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-alpine:20260121-b1.88-alpine3.22
-  needs: []
+  parallel:
+    matrix:
+      - LIBC: linux-x86_64-glibc
+        BUILD_IMAGE: lang/rust-debian:20260123-b1.88-slim-trixie
+      - LIBC: linux-x86_64-musl
+        BUILD_IMAGE: lang/rust-alpine:20260123-b1.88-alpine3.22
+  image: registry.gitlab.com/rhobimd-oss/cicd/${BUILD_IMAGE}
   interruptible: true
   timeout: 10m
   rules: *zed-rules-ci
@@ -63,33 +48,8 @@ test:musl:
       rustc --version
       cargo --version
 
-      echo "=== Integration tests (musl) ==="
-      ${TEST_CMD}
-  cache:
-    key: zed-ext-deps
-    paths:
-      - .cargo/registry/cache/
-      - .cargo/registry/index/
-      - .cargo/git/db/
-
-test:glibc:
-  stage: test
-  image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-debian:20260123-b1.88-slim-trixie
-  needs: []
-  interruptible: true
-  timeout: 10m
-  rules: *zed-rules-ci
-  script:
-    - |
-      set -euo pipefail
-      cd ${ZED_EXT_DIR}
-
-      echo "=== Toolchain versions ==="
-      rustc --version
-      cargo --version
-
-      echo "=== Integration tests (glibc) ==="
-      ${TEST_CMD}
+      echo "=== Integration tests ${LIBC} ==="
+      cargo test --test github_release -- --ignored --test-threads=1
   cache:
     key: zed-ext-deps
     paths:
