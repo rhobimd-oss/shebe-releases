@@ -14,7 +14,7 @@ multiple distribution channels. The source code lives in the main
 
 | Channel | Status | Install Command |
 |---------|--------|-----------------|
-| Homebrew | Planned | `brew tap rhobimd-oss/shebe-releases && brew install shebe` |
+| Homebrew | Available | `brew tap rhobimd-oss/shebe-releases && brew install shebe` |
 | Zed Extension | Available | Install from Zed Extensions marketplace |
 | VS Code Extension | Planned | Install from VS Code marketplace |
 
@@ -25,6 +25,20 @@ Install both `shebe` (CLI) and `shebe-mcp` (MCP server) binaries:
 ```bash
 brew tap rhobimd-oss/shebe-releases
 brew install shebe
+```
+
+Verify the installation:
+
+```bash
+shebe --version
+shebe-mcp --version
+```
+
+To upgrade after a new release:
+
+```bash
+brew update
+brew upgrade shebe
 ```
 
 ### Zed Extension
@@ -65,9 +79,7 @@ shebe-releases/
 │       └── ...
 ├── .github/
 │   └── workflows/
-│       ├── update-formula.yml    # Update Homebrew on new release
-│       ├── publish-zed.yml       # Publish Zed extension
-│       └── publish-vscode.yml    # Publish VS Code extension
+│       └── test-zed-extension.yml # Zed extension CI tests
 ├── .gitlab-ci.yml                # GitLab CI (triggers GitHub Actions)
 ├── ARCHITECTURE.md               # Design and release flow
 └── README.md                     # This file
@@ -81,11 +93,10 @@ shebe-releases/
    [shebe](https://github.com/rhobimd-oss/shebe) repo
 2. GitLab CI builds cross-platform binaries (Linux x86_64, macOS
    Intel and macOS ARM)
-3. GitLab CI triggers this repo's GitHub Actions workflows
-4. GitHub Actions updates the Homebrew formula and publishes
-   editor extensions
-
-No manual steps required after tagging.
+3. Binaries are uploaded to a GitHub release
+4. The Homebrew formula is updated manually with new version and
+   SHA256 checksums
+5. Zed registry picks up new versions automatically via submodule
 
 ---
 
