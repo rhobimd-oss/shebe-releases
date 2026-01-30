@@ -1,9 +1,19 @@
 # Shebe Code Search - Zed Extension
 
-BM25 full-text code search for AI agents via MCP. This extension
-downloads and registers the
-[shebe-mcp](https://gitlab.com/rhobimd-oss/shebe) binary as a
-context server in Zed's Agent Panel.
+Fast, local code search powered by [BM25][bm25]. No embeddings, no GPU,
+no cloud. This extension downloads and registers the
+[shebe-mcp](https://github.com/rhobimd-oss/shebe) binary as a context
+server (MCP server) in Zed's Agent Panel.
+
+Research shows [70-85% of developer code search][research] value comes
+from keyword-based queries. Developers search with exact terms they know:
+function names, API calls and error messages. Shebe delivers 2ms query
+latency at ~2,000-12,000 files/sec indexing speed, entirely offline.
+
+**Trade-offs:**
+- Repositories must be cloned locally before indexing (no remote URLs)
+- No semantic similarity: "login" does not match "authenticate". Use
+  boolean queries to cover synonyms (`login OR authenticate OR sign-in`)
 
 ---
 
@@ -43,38 +53,75 @@ Ask the agent to index your project:
 Index this repository for code search
 ```
 
-Shebe indexes at ~2,000+ files/sec with 2ms search latency.
-
 ### Searching Code
 
-Once indexed, search across your codebase:
+Once indexed, search across your codebase with keyword queries:
 
 ```
-Search for authentication middleware in the codebase
+Search for handleLogin in the codebase
 ```
+
+Boolean operators work for broader searches:
+
+```
+Find references to auth AND (session OR token)
+```
+
+### Finding References
+
+Before renaming a symbol, discover all usages:
+
+```
+Find all references to AuthorizationPolicy
+```
+
+Shebe returns results ranked by confidence with pattern
+classification (type annotation, function call, instantiation etc).
 
 ---
 
 ## MCP Tools
 
-The extension provides 14 tools through shebe-mcp:
+### Core
 
 | Tool | Description |
 |------|-------------|
-| `search_code` | BM25 full-text search across indexed files |
-| `index_repository` | Index a directory for search |
-| `reindex_session` | Re-index an existing session |
-| `list_sessions` | List all active sessions |
-| `get_session_info` | Get details about a session |
+| `search_code` | BM25 full-text search (2ms latency, 200-700 tokens) |
+| `index_repository` | Index a directory (2k-12k files/sec) |
+| `find_references` | Find symbol references with confidence scores |
+| `list_sessions` | List all indexed sessions |
+| `get_session_info` | Session metadata and statistics |
+| `get_server_info` | Server version and capabilities |
+| `show_shebe_config` | Display current configuration |
+
+### Ergonomic
+
+| Tool | Description |
+|------|-------------|
+| `read_file` | Read file contents (auto-truncated to 20KB) |
+| `find_file` | Find files by glob or regex pattern |
+| `list_dir` | List directory contents (paginated) |
+| `preview_chunk` | Show context around an indexed chunk |
+| `reindex_session` | Re-index using stored repository path |
 | `delete_session` | Remove a session and its index |
-| `upgrade_session` | Upgrade session to current version |
-| `read_file` | Read file contents from an indexed session |
-| `find_file` | Find files by name pattern |
-| `find_references` | Find symbol references across files |
-| `list_dir` | List directory contents |
-| `preview_chunk` | Preview indexed chunks for a file |
-| `get_server_info` | Server version and status |
-| `show_shebe_config` | Show current configuration |
+| `upgrade_session` | Upgrade session schema to current version |
+
+---
+
+## Configuration
+
+Shebe works out-of-the-box with sensible defaults. For tuning,
+set environment variables or create `~/.config/shebe/config.toml`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SHEBE_CHUNK_SIZE` | `512` | Characters per chunk (100-2000) |
+| `SHEBE_OVERLAP` | `64` | Overlap between chunks |
+| `SHEBE_DEFAULT_K` | `10` | Default search results count |
+| `SHEBE_MAX_K` | `100` | Maximum results allowed |
+| `SHEBE_DATA_DIR` | `~/.local/share/shebe` | Index storage location |
+
+See [CONFIGURATION.md][config] for the full reference.
 
 ---
 
@@ -123,6 +170,22 @@ curl -sI https://github.com/rhobimd-oss/shebe/releases
 
 ## Related
 
-- [Shebe](https://gitlab.com/rhobimd-oss/shebe) - Source code
+- [Shebe](https://github.com/rhobimd-oss/shebe) - Source code
+  and documentation
+- [Benchmarks](https://github.com/rhobimd-oss/shebe/blob/main/WHY_SHEBE.md) -
+  Comparisons against grep/ripgrep and Serena MCP
+- [Configuration Guide][config] - All configuration options
+- [MCP Tools Reference](https://github.com/rhobimd-oss/shebe/blob/main/docs/guides/mcp-tools-reference.md) -
+  Detailed API for all 14 tools
 - [shebe-releases](https://github.com/rhobimd-oss/shebe-releases) -
   Distribution hub
+
+---
+
+## License
+
+See [LICENSE](https://github.com/rhobimd-oss/shebe/blob/main/LICENSE).
+
+[bm25]: https://en.wikipedia.org/wiki/Okapi_BM25
+[research]: https://research.google/pubs/how-developers-search-for-code-a-case-study/
+[config]: https://github.com/rhobimd-oss/shebe/blob/main/CONFIGURATION.md

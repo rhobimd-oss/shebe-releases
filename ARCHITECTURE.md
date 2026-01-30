@@ -2,7 +2,7 @@
 
 **Purpose:** Distribution hub for Shebe binaries and editor extensions.
 
-**Updated:** 2026-01-29
+**Updated:** 2026-01-30
 
 ---
 
@@ -13,27 +13,29 @@ packaging and publication of pre-built binaries across three channels:
 Homebrew, Zed extension and VS Code extension.
 
 ```
-  GitLab (source of truth)
-  gitlab.com/rhobimd-oss/shebe
+  github.com/rhobimd-oss/shebe
          │
          │  Tag push (e.g. v0.7.0)
          │
          ▼
   ┌─────────────────────────┐
-  │  GitLab CI Pipeline     │
+  │  GitHub Actions          │
+  │  (shebe repo)           │
   │  - Build Linux x86_64   │
-  │  - Trigger GitHub       │
+  │  - Build macOS binaries │
+  │  - Create release       │
+  │  - Trigger shebe-releases│
   └────────────┬────────────┘
                │
-               │  API trigger / webhook
+               │  repository_dispatch
                ▼
   ┌─────────────────────────┐
   │  GitHub Actions          │
   │  (shebe-releases repo)  │
   │                         │
   │  ┌───────────────────┐  │
-  │  │ Build macOS bins  │  │
-  │  │ (Intel + ARM)     │  │
+  │  │ Update Homebrew   │  │
+  │  │ Publish extensions│  │
   │  └────────┬──────────┘  │
   │           │              │
   │  ┌────────┴──────────┐  │
@@ -56,7 +58,7 @@ Homebrew, Zed extension and VS Code extension.
 **How it works:**
 
 - `Formula/shebe.rb` is a standard Homebrew formula
-- Points to release tarballs on GitHub (or GitLab)
+- Points to release tarballs on GitHub
 - Installs two binaries: `shebe` and `shebe-mcp`
 - SHA256 checksums verified from release assets
 
@@ -139,9 +141,9 @@ Each release produces binaries for these targets:
 
 | Target | Built By | Used By |
 |--------|----------|---------|
-| `x86_64-unknown-linux-gnu` | GitLab CI | Homebrew (Linux) |
-| `x86_64-apple-darwin` | GitHub Actions | Homebrew (macOS Intel), Zed, VS Code |
-| `aarch64-apple-darwin` | GitHub Actions | Homebrew (macOS ARM), Zed, VS Code |
+| `x86_64-unknown-linux-gnu` | GitHub Actions (shebe repo) | Homebrew (Linux) |
+| `x86_64-apple-darwin` | GitHub Actions (shebe repo) | Homebrew (macOS Intel), Zed, VS Code |
+| `aarch64-apple-darwin` | GitHub Actions (shebe repo) | Homebrew (macOS ARM), Zed, VS Code |
 
 Each target produces two binaries:
 - `shebe` - CLI for standalone use
@@ -159,7 +161,7 @@ shebe-v{VERSION}-{TARGET}.tar.gz.sha256
 
 ### `update-formula.yml`
 
-**Trigger:** Repository dispatch from GitLab CI (new release tag)
+**Trigger:** Repository dispatch from shebe repo (new release tag)
 
 **Steps:**
 1. Receive version and checksums from trigger payload
@@ -168,7 +170,7 @@ shebe-v{VERSION}-{TARGET}.tar.gz.sha256
 
 ### `publish-zed.yml`
 
-**Trigger:** Repository dispatch from GitLab CI (new release tag)
+**Trigger:** Repository dispatch from shebe repo (new release tag)
 
 **Steps:**
 1. Build Zed extension package
@@ -176,7 +178,7 @@ shebe-v{VERSION}-{TARGET}.tar.gz.sha256
 
 ### `publish-vscode.yml`
 
-**Trigger:** Repository dispatch from GitLab CI (new release tag)
+**Trigger:** Repository dispatch from shebe repo (new release tag)
 
 **Steps:**
 1. Install dependencies, compile TypeScript
@@ -185,12 +187,10 @@ shebe-v{VERSION}-{TARGET}.tar.gz.sha256
 
 ---
 
-## GitLab CI Integration
+## Cross-Repo Trigger
 
-The `.gitlab-ci.yml` in this repo is minimal (placeholder test job).
-The primary CI/CD runs in the main shebe repo. After building
-release binaries, the shebe GitLab CI triggers GitHub Actions
-workflows in this repo via the GitHub API:
+The shebe repo triggers this repo's workflows after building release
+binaries via the GitHub API:
 
 ```bash
 curl -X POST \
@@ -211,13 +211,12 @@ curl -X POST \
 - Keeps the main shebe repo focused on source code
 - Single place to manage all distribution concerns
 
-### Why GitHub (not GitLab) for distribution?
+### Why GitHub for distribution?
 
 - Homebrew expects GitHub release URLs by convention
 - Zed extension registry integrates with GitHub
 - VS Code marketplace `vsce` tool works with any Git host but
   GitHub Actions simplifies CI
-- GitLab remains the source of truth for development
 
 ### Why download binaries at runtime (editor extensions)?
 
@@ -230,8 +229,8 @@ curl -X POST \
 
 ## Key Invariants
 
-1. **Source of truth is GitLab** - this repo has no Shebe source code
-2. **All releases originate from shebe GitLab tags** - no manual
+1. **No Shebe source code** - this repo only handles distribution
+2. **All releases originate from shebe repo tags** - no manual
    releases from this repo
 3. **Binary checksums are always verified** - SHA256 from release
    assets

@@ -18,11 +18,19 @@ on:
       - .github/workflows/test-zed-extension.yml
 
 jobs:
-  test-musl:
-    name: Integration tests (musl)
+  test-linux:
+    name: Integration tests (${{ matrix.libc }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - libc: musl
+            image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-alpine:20260121-b1.88-alpine3.22
+          - libc: glibc
+            image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-debian:20260123-b1.88-slim-trixie
     runs-on: ubuntu-latest
     container:
-      image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-alpine:20260121-b1.88-alpine3.22
+      image: ${{ matrix.image }}
     timeout-minutes: 10
     env:
       CARGO_INCREMENTAL: "0"
@@ -38,10 +46,10 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/git/db
             extensions/zed/target
-          key: musl-cargo-${{ hashFiles('extensions/zed/Cargo.lock') }}
-          restore-keys: musl-cargo-
+          key: ${{ matrix.libc }}-cargo-${{ hashFiles('extensions/zed/Cargo.lock') }}
+          restore-keys: ${{ matrix.libc }}-cargo-
 
-      - name: Run integration tests (musl)
+      - name: Run integration tests (${{ matrix.libc }})
         working-directory: extensions/zed
         run: |
           set -euo pipefail
@@ -49,21 +57,30 @@ jobs:
           rustc --version
           cargo --version
 
-          echo "=== Integration tests (musl) ==="
+          echo "=== Integration tests (${{ matrix.libc }}) ==="
           cargo test --test github_release \
             -- --ignored --test-threads=1
 
-  test-glibc:
-    name: Integration tests (glibc)
-    runs-on: ubuntu-latest
-    container:
-      image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-debian:20260123-b1.88-slim-trixie
+  test-macos:
+    name: Integration tests (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            arch: x86_64
+          - os: macos-15
+            arch: aarch64
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     env:
       CARGO_INCREMENTAL: "0"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cargo cache
         uses: actions/cache@v4
@@ -73,10 +90,10 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/git/db
             extensions/zed/target
-          key: glibc-cargo-${{ hashFiles('extensions/zed/Cargo.lock') }}
-          restore-keys: glibc-cargo-
+          key: macos-${{ matrix.arch }}-cargo-${{ hashFiles('extensions/zed/Cargo.lock') }}
+          restore-keys: macos-${{ matrix.arch }}-cargo-
 
-      - name: Run integration tests (glibc)
+      - name: Run integration tests (macOS ${{ matrix.arch }})
         working-directory: extensions/zed
         run: |
           set -euo pipefail
@@ -84,6 +101,6 @@ jobs:
           rustc --version
           cargo --version
 
-          echo "=== Integration tests (glibc) ==="
+          echo "=== Integration tests (macOS ${{ matrix.arch }}) ==="
           cargo test --test github_release \
             -- --ignored --test-threads=1
