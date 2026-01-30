@@ -3,19 +3,40 @@ volumes:
     driver: local
   cargo-git:
     driver: local
-  cargo-target:
+  cargo-target-alpine:
+    driver: local
+  cargo-target-debian:
     driver: local
 
 services:
-  zed-ext-dev:
+  # Alpine (musl) -- used for WASM builds, linting and
+  # integration tests that exercise the musl binary.
+  rust-alpine:
     image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-alpine:20260121-b1.88-alpine3.22
-    container_name: zed-ext-dev
+    container_name: zed-ext-alpine
     working_dir: /workspace
     volumes:
       - ../extensions/zed:/workspace:rw
       - cargo-registry:/usr/local/cargo/registry
       - cargo-git:/usr/local/cargo/git
-      - cargo-target:/workspace/target
+      - cargo-target-alpine:/workspace/target
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
     stdin_open: true
     tty: true
+    command: bash
+
+  # Debian (glibc) -- used for integration tests that
+  # exercise the glibc binary.
+  rust-debian:
+    image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-debian:20260123-b1.88-slim-trixie
+    container_name: zed-ext-debian
+    working_dir: /workspace
+    volumes:
+      - ../extensions/zed:/workspace:rw
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - cargo-target-debian:/workspace/target
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
     command: bash

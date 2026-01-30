@@ -1,0 +1,89 @@
+name: Zed Extension Tests
+
+on:
+  pull_request:
+    paths:
+      - extensions/zed/Cargo.lock
+      - extensions/zed/Cargo.toml
+      - extensions/zed/src/**
+      - extensions/zed/tests/**
+      - .github/workflows/test-zed-extension.yml
+  push:
+    branches: [main]
+    paths:
+      - extensions/zed/Cargo.lock
+      - extensions/zed/Cargo.toml
+      - extensions/zed/src/**
+      - extensions/zed/tests/**
+      - .github/workflows/test-zed-extension.yml
+
+jobs:
+  test-musl:
+    name: Integration tests (musl)
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-alpine:20260121-b1.88-alpine3.22
+    timeout-minutes: 10
+    env:
+      CARGO_INCREMENTAL: "0"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/git/db
+            extensions/zed/target
+          key: musl-cargo-${{ hashFiles('extensions/zed/Cargo.lock') }}
+          restore-keys: musl-cargo-
+
+      - name: Run integration tests (musl)
+        working-directory: extensions/zed
+        run: |
+          set -euo pipefail
+          echo "=== Toolchain versions ==="
+          rustc --version
+          cargo --version
+
+          echo "=== Integration tests (musl) ==="
+          cargo test --test github_release \
+            -- --ignored --test-threads=1
+
+  test-glibc:
+    name: Integration tests (glibc)
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-debian:20260123-b1.88-slim-trixie
+    timeout-minutes: 10
+    env:
+      CARGO_INCREMENTAL: "0"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/git/db
+            extensions/zed/target
+          key: glibc-cargo-${{ hashFiles('extensions/zed/Cargo.lock') }}
+          restore-keys: glibc-cargo-
+
+      - name: Run integration tests (glibc)
+        working-directory: extensions/zed
+        run: |
+          set -euo pipefail
+          echo "=== Toolchain versions ==="
+          rustc --version
+          cargo --version
+
+          echo "=== Integration tests (glibc) ==="
+          cargo test --test github_release \
+            -- --ignored --test-threads=1

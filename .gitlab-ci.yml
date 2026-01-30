@@ -1,19 +1,98 @@
 stages:
+  - prep
   - test
 
-test:
-  stage: test
-  image: alpine:latest
-  script:
-    - /bin/true  # Does nothing, exits with status 0
-  interruptible: true
-  timeout: 15s
-  before_script: []  # Disable any global before_script
-  after_script: []   # Disable any global after_script
-  cache: {}          # Disable caching
-  artifacts:
-    reports: {}      # Disable artifact generation
+variables:
+  CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  CARGO_INCREMENTAL: "0"
+  ZED_EXT_DIR: extensions/zed
+  TEST_CMD: >-
+    cargo test --test github_release
+    -- --ignored --test-threads=1
+
+## RULES ======================================================================
+
+.zed-rules-ci: &zed-rules-ci
+  - if: $CI_MERGE_REQUEST_ID
+    changes:
+      compare_to: refs/heads/main
+      paths:
+        - extensions/zed/Cargo.lock
+        - extensions/zed/Cargo.toml
+        - extensions/zed/src/**/*
+        - extensions/zed/tests/**/*
+  - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    changes:
+      paths:
+        - extensions/zed/Cargo.lock
+        - extensions/zed/Cargo.toml
+        - extensions/zed/src/**/*
+        - extensions/zed/tests/**/*
+
+## JOBS ========================================================================
+
+dummy:job:
+  stage: prep
+  image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-alpine:20260123-b1.88-alpine3.22
+  timeout: 60s
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'  # merge requests
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'             # Only on scheduled pipelines
-    - if: '$CI_PIPELINE_SOURCE == "api"'                  # Or API triggers
+    - if: $CI_MERGE_REQUEST_ID
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - time
+  before_script: []
+  after_script: []
+  cache: {}
+  artifacts:
+    reports: {}
+
+test:musl:
+  stage: test
+  image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-alpine:20260121-b1.88-alpine3.22
+  needs: []
+  interruptible: true
+  timeout: 10m
+  rules: *zed-rules-ci
+  script:
+    - |
+      set -euo pipefail
+      cd ${ZED_EXT_DIR}
+
+      echo "=== Toolchain versions ==="
+      rustc --version
+      cargo --version
+
+      echo "=== Integration tests (musl) ==="
+      ${TEST_CMD}
+  cache:
+    key: zed-ext-deps
+    paths:
+      - .cargo/registry/cache/
+      - .cargo/registry/index/
+      - .cargo/git/db/
+
+test:glibc:
+  stage: test
+  image: registry.gitlab.com/rhobimd-oss/cicd/lang/rust-debian:20260123-b1.88-slim-trixie
+  needs: []
+  interruptible: true
+  timeout: 10m
+  rules: *zed-rules-ci
+  script:
+    - |
+      set -euo pipefail
+      cd ${ZED_EXT_DIR}
+
+      echo "=== Toolchain versions ==="
+      rustc --version
+      cargo --version
+
+      echo "=== Integration tests (glibc) ==="
+      ${TEST_CMD}
+  cache:
+    key: zed-ext-deps
+    paths:
+      - .cargo/registry/cache/
+      - .cargo/registry/index/
+      - .cargo/git/db/

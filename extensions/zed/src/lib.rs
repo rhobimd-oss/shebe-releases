@@ -52,9 +52,15 @@ impl ShebeExtension {
             }
         };
 
+        let suffix = if os_str == "linux" {
+            "-musl"
+        } else {
+            ""
+        };
+
         let asset_name = format!(
-            "shebe-{}-{}-{}.tar.gz",
-            release.version, os_str, arch_str,
+            "shebe-{}-{}-{}{}.tar.gz",
+            release.version, os_str, arch_str, suffix,
         );
 
         let asset = release
