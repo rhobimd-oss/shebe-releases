@@ -1,12 +1,12 @@
 # Shebe Releases
 
-Distribution hub for [Shebe](https://gitlab.com/rhobimd-oss/shebe) -
+Distribution hub for [Shebe](https://github.com/rhobimd-oss/shebe) -
 an MCP-based RAG service providing BM25 full-text search for code
 repositories.
 
 This repository manages release packaging and publication across
 multiple distribution channels. The source code lives in the main
-[shebe](https://gitlab.com/rhobimd-oss/shebe) repository on GitLab.
+[shebe](https://github.com/rhobimd-oss/shebe) repository.
 
 ---
 
@@ -78,7 +78,7 @@ shebe-releases/
 ## Release Flow
 
 1. A new tag is pushed on the main
-   [shebe](https://gitlab.com/rhobimd-oss/shebe) GitLab repo
+   [shebe](https://github.com/rhobimd-oss/shebe) repo
 2. GitLab CI builds cross-platform binaries (Linux x86_64, macOS
    Intel and macOS ARM)
 3. GitLab CI triggers this repo's GitHub Actions workflows
@@ -101,14 +101,13 @@ No manual steps required after tagging.
 
 ## Related Repositories
 
-- [shebe](https://gitlab.com/rhobimd-oss/shebe) - Source code
-  (GitLab)
-- [shebe GitHub mirror](https://github.com/rhobimd-oss/shebe) -
-  Read-only mirror for release assets
+- [shebe](https://github.com/rhobimd-oss/shebe) - Source code
+- [shebe-releases](https://github.com/rhobimd-oss/shebe-releases) -
+  This repository (distribution hub)
 
 ---
 
 ## License
 
-See the main [shebe](https://gitlab.com/rhobimd-oss/shebe) repository
+See the main [shebe](https://github.com/rhobimd-oss/shebe) repository
 for license information.
