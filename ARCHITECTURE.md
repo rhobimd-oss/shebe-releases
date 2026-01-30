@@ -18,33 +18,23 @@ Homebrew, Zed extension and VS Code extension.
          │  Tag push (e.g. v0.7.0)
          │
          ▼
-  ┌─────────────────────────┐
-  │  GitHub Actions          │
-  │  (shebe repo)           │
-  │  - Build Linux x86_64   │
-  │  - Build macOS binaries │
-  │  - Create release       │
-  │  - Trigger shebe-releases│
-  └────────────┬────────────┘
+  ┌───────────────────────────┐
+  │  GitHub Actions           │
+  │  (shebe repo)             │
+  │  - Build Linux x86_64     │
+  │  - Build macOS binaries   │
+  │  - Create GitHub release  │
+  └────────────┬──────────────┘
                │
-               │  repository_dispatch
+               │  Release published
                ▼
-  ┌─────────────────────────┐
-  │  GitHub Actions          │
-  │  (shebe-releases repo)  │
-  │                         │
-  │  ┌───────────────────┐  │
-  │  │ Update Homebrew   │  │
-  │  │ Publish extensions│  │
-  │  └────────┬──────────┘  │
-  │           │              │
-  │  ┌────────┴──────────┐  │
-  │  │                   │  │
-  │  ▼                   ▼  │
-  │  Homebrew     Editor    │
-  │  Formula      Extensions│
-  │  update       publish   │
-  └─────────────────────────┘
+  ┌──────────────────────────────────┐
+  │  Manual / Automatic Updates      │
+  │                                  │
+  │  Homebrew: manual formula update │
+  │  Zed: auto via registry submodule│
+  │  VS Code: publish with vsce      │
+  └──────────────────────────────────┘
 ```
 
 ---
@@ -64,10 +54,9 @@ Homebrew, Zed extension and VS Code extension.
 
 **Update flow:**
 
-1. `update-formula.yml` workflow triggered by new release
-2. Downloads release checksums
-3. Updates version and SHA256 in `Formula/shebe.rb`
-4. Commits and pushes to main branch
+1. New shebe release published on GitHub
+2. Maintainer updates version and SHA256 values in `Formula/shebe.rb`
+3. Change committed via feature branch and MR
 
 **User install:**
 
@@ -102,9 +91,13 @@ extensions/zed/
 
 **Publish flow:**
 
-1. `publish-zed.yml` workflow triggered by new release
-2. Builds the Zed extension package
-3. Publishes to Zed's extension registry
+Zed extensions are distributed via submodules in
+`zed-industries/extensions`. No publish workflow is needed.
+
+1. Bump `version` in `extension.toml` and `Cargo.toml`
+2. Push to the GitHub mirror
+3. Zed's registry CI detects the version change and builds
+   the extension from source automatically
 
 ### VS Code Extension
 
@@ -159,46 +152,13 @@ shebe-v{VERSION}-{TARGET}.tar.gz.sha256
 
 ## GitHub Actions Workflows
 
-### `update-formula.yml`
+### `test-zed-extension.yml`
 
-**Trigger:** Repository dispatch from shebe repo (new release tag)
-
-**Steps:**
-1. Receive version and checksums from trigger payload
-2. Update `Formula/shebe.rb` with new version and SHA256 values
-3. Commit and push to main
-
-### `publish-zed.yml`
-
-**Trigger:** Repository dispatch from shebe repo (new release tag)
+**Trigger:** Push or PR affecting `extensions/zed/` files
 
 **Steps:**
-1. Build Zed extension package
-2. Publish to Zed extension registry
-
-### `publish-vscode.yml`
-
-**Trigger:** Repository dispatch from shebe repo (new release tag)
-
-**Steps:**
-1. Install dependencies, compile TypeScript
-2. Package with `vsce package`
-3. Publish with `vsce publish`
-
----
-
-## Cross-Repo Trigger
-
-The shebe repo triggers this repo's workflows after building release
-binaries via the GitHub API:
-
-```bash
-curl -X POST \
-  -H "Authorization: token $GITHUB_TOKEN" \
-  -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/rhobimd-oss/shebe-releases/dispatches \
-  -d '{"event_type":"new-release","client_payload":{"version":"0.7.0"}}'
-```
+1. Build Zed extension on Linux (musl + glibc) and macOS
+2. Run integration tests against GitHub releases
 
 ---
 
